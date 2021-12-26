@@ -1,5 +1,9 @@
 #include <stdio.h>
 
+int *front;
+int end;
+int *offset;
+
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   /*memory size and where it will start , create a stack , first pointer and
   offset pointer to
@@ -39,7 +43,7 @@ void my_free(void *mem_pointer) {
 };
 void mem_get_stats(mem_stats_ptr mem_stats_ptr) {
 
-  typedef struct {
+  mem_stats_ptr typedef struct {
     int num_blocks_used;
     int num_blocks_free;
     int smallest_block_free;
