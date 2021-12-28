@@ -4,6 +4,19 @@ int *front;
 int end;
 int *offset;
 
+typedef struct {
+  int num_blocks_used;
+  int num_blocks_free;
+  int smallest_block_free;
+  int smallest_block_used;
+  int largest_block_free;
+  int largest_block_used;
+} mem_stats_struct, *mem_stats_ptr;
+
+mem_stats_ptr mem_stats_p;
+mem_stats_struct mem_stats_s;
+/*mem_stats_p=&mem_stats_s;*/
+
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   /*memory size and where it will start , create a stack , first pointer and
   offset pointer to
@@ -18,7 +31,7 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   int smallestHeader = 0;
   /*keep track of biggest block*/
   int biggestHeader = 0;
-}
+};
 void *my_malloc(unsigned size) {
   /*pass the memory size and move the offset pointer to accomodate your size of
    * memory*/
@@ -37,19 +50,16 @@ void my_free(void *mem_pointer) {
   pointer back depending on size of the variable*/
   /* need the value of mem_pointer minus size of int, which would be the
    * header*/
-  int free_space = *mem_pointer - sizeof(int);
+  int free_space = sizeof(mem_pointer);
   /* moveoffset back the amt of free space*/
-  offset -= free_space + sizeof(int)
+  offset -= free_space + sizeof(int);
 };
 void mem_get_stats(mem_stats_ptr mem_stats_ptr) {
-
-  mem_stats_ptr typedef struct {
-    int num_blocks_used;
-    int num_blocks_free;
-    int smallest_block_free;
-    int smallest_block_used;
-    int largest_block_free;
-    int largest_block_used;
-  };
-  mem_stats_struct, *mem_stats_ptr;
+  mem_stats_struct mem_struct = *mem_stats_ptr;
+  printf("%d\n", mem_struct.num_blocks_used);
+  printf("%d\n", mem_struct.num_blocks_free);
+  printf("%d\n", mem_struct.smallest_block_free);
+  printf("%d\n", mem_struct.smallest_block_used);
+  printf("%d\n", mem_struct.largest_block_free);
+  printf("%d\n", mem_struct.largest_block_used);
 };
