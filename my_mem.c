@@ -1,11 +1,15 @@
 #include <stdio.h>
-
+/*global variables*/
 int *front;
 int end;
 int *offset;
 int total_mem_size;
 int cur_mem_used;
-
+/* keep track of prev smallest block*/
+int prevSmallestHeader = 0;
+/*keep track of prev biggest block*/
+int prevBiggestHeader = 0;
+int prev_size;
 typedef struct {
   int num_blocks_used;
   int num_blocks_free;
@@ -36,10 +40,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   int end = my_mem_size;
   /*pointer to the offset of the stack*/
   int *offset = 0;
-  /* keep track of smallest block*/
-  int smallestHeader = 0;
-  /*keep track of biggest block*/
-  int biggestHeader = 0;
   /*set total memory size*/
   total_mem_size = my_mem_size;
   /*set current memory size*/
@@ -66,16 +66,31 @@ void *my_malloc(unsigned size) {
   if (cur_mem_used > total_mem_size) {
     printf("%s\n", "Error,not enough free memory");
   }
-  mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used;
+  mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used - sizeof(int);
   /*check if this block is the smallest*/
-  if (*header < mem_stats_s.smallest_block_used) {
+  if (mem_stats_s.smallest_block_used == 0) {
     mem_stats_s.smallest_block_used = size;
+    prevSmallestHeader = size;
+  } else if ((*header < mem_stats_s.smallest_block_used) &&
+             (*header < prevSmallestHeader)) {
+    prevSmallestHeader = mem_stats_s.smallest_block_used;
+    mem_stats_s.smallest_block_used = size;
+  } else if ((*header > mem_stats_s.smallest_block_used) &&
+             (*header < prevSmallestHeader)) {
+    prevSmallestHeader = size;
   }
-  mem_stats_s.largest_block_free = total_mem_size - cur_mem_used;
+
+  mem_stats_s.largest_block_free = total_mem_size - cur_mem_used - sizeof(int);
   /*check if this block is the largest*/
-  if (*header > mem_stats_s.largest_block_used) {
+  if ((*header > mem_stats_s.largest_block_used) &&
+      (*header > prevBiggestHeader)) {
+    prevBiggestHeader = mem_stats_s.largest_block_used;
     mem_stats_s.largest_block_used = size;
+  } else if ((*header < mem_stats_s.largest_block_used) &&
+             (*header > prevBiggestHeader)) {
+    prevBiggestHeader = size;
   }
+  return header;
 };
 void my_free(void *mem_pointer) {
   /*pass a pointer that is pointing to memory where the memory is , the header
@@ -83,31 +98,39 @@ void my_free(void *mem_pointer) {
   pointer back depending on size of the variable*/
   /* need the value of mem_pointer minus size of int, which would be the
    * header*/
-  int free_space = sizeof(mem_pointer);
+  /*need to figure out how to add in the size*/
+  int free_space = sizeof(*mem_pointer);
   /* moveoffset back the amt of free space*/
   offset -= free_space + sizeof(int);
   /*how to change the stats of the free*/
-  cur_mem_used -= free_space;
+  cur_mem_used -= free_space + sizeof(int);
   mem_stats_s.num_blocks_used -= 1;
   mem_stats_s.num_blocks_free = 1;
   /*should I add in an error message here if you cant remove a variable */
   mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used;
-  /*find the smallest, with a pointer?*/
-  if () {
-    mem_stats_s.smallest_block_used = ;
+  /**/
+  if (free_space == mem_stats_s.smallest_block_used) {
+    mem_stats_s.smallest_block_used = prevSmallestHeader;
   }
   mem_stats_s.largest_block_free = total_mem_size - cur_mem_used;
-  /*find the largest block, with a pointer?*/
-  if () {
-    mem_stats_s.largest_block_used = ;
+  /**/
+  if (free_space == mem_stats_s.largest_block_used) {
+    mem_stats_s.largest_block_used = prevBiggestHeader;
+  }
+  if (free_space == total_mem_size) {
+    mem_stats_s.smallest_block_used = 0;
   }
 };
 void mem_get_stats(mem_stats_ptr mem_stats_ptr) {
   mem_stats_struct mem_struct = *mem_stats_ptr;
-  printf("%d\n", mem_struct.num_blocks_used);
-  printf("%d\n", mem_struct.num_blocks_free);
-  printf("%d\n", mem_struct.smallest_block_free);
-  printf("%d\n", mem_struct.smallest_block_used);
-  printf("%d\n", mem_struct.largest_block_free);
-  printf("%d\n", mem_struct.largest_block_used);
 };
+void print_stats(char *prefix) {
+  /*mem_stats_struct mem_stats;*/
+
+  mem_get_stats(&mem_stats_s);
+  printf("mem stats: %s: %d free blocks, %d used blocks, free blocks: "
+         "smallest=%d largest=%d, used blocks: smallest=%d largest=%d\n",
+         prefix, mem_stats_s.num_blocks_free, mem_stats_s.num_blocks_used,
+         mem_stats_s.smallest_block_free, mem_stats_s.largest_block_free,
+         mem_stats_s.smallest_block_used, mem_stats_s.largest_block_used);
+}
