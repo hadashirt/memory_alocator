@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 /*global variables*/
 int *front;
 int end;
@@ -31,9 +32,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   mem_stats_s.smallest_block_used = 0;
   mem_stats_s.largest_block_free = my_mem_size;
   mem_stats_s.largest_block_used = 0;
-  /*memory size and where it will start , create a stack , first pointer and
-  offset pointer to
-  keep track as to where it ends, set them to equal bc no data in the function*/
   /* pointer to the begining of the stack*/
   int *front = 0;
   /*size of the stack*/
@@ -57,15 +55,20 @@ void *my_malloc(unsigned size) {
   /* set the adress of var size to be the same as header so that header is
    * pointng to the size */
   header = &var_size;
+  /*increment the offset*/
   offset += var_size + sizeof(int);
-
+  /*increment number of blocks used*/
   mem_stats_s.num_blocks_used += 1;
+  /* if all the space is used set the num of free blocks to 0*/
   if (cur_mem_used == total_mem_size) {
     mem_stats_s.num_blocks_free = 0;
   }
+  /*if the cur mem used is greater then the size , return an error*/
   if (cur_mem_used > total_mem_size) {
-    printf("%s\n", "Error,not enough free memory");
+    fprintf(stderr, " Error,not enough free memory ");
+    exit(-1);
   }
+  /* change the smallest free block to the new size of the free block*/
   mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used - sizeof(int);
   /*check if this block is the smallest*/
   if (mem_stats_s.smallest_block_used == 0) {
@@ -79,7 +82,7 @@ void *my_malloc(unsigned size) {
              (*header < prevSmallestHeader)) {
     prevSmallestHeader = size;
   }
-
+  /* change the largest free block to the new size of the free block*/
   mem_stats_s.largest_block_free = total_mem_size - cur_mem_used - sizeof(int);
   /*check if this block is the largest*/
   if ((*header > mem_stats_s.largest_block_used) &&
@@ -90,19 +93,21 @@ void *my_malloc(unsigned size) {
              (*header > prevBiggestHeader)) {
     prevBiggestHeader = size;
   }
+  /*return pointer to the size of that insert*/
   return header;
 };
 void my_free(void *mem_pointer) {
   /*pass a pointer that is pointing to memory where the memory is , the header
   should show you how big the data is in the part of the stack, move the offset
   pointer back depending on size of the variable*/
-  /* need the value of mem_pointer minus size of int, which would be the
-   * header*/
-  /*need to figure out how to add in the size*/
-  int free_space = sizeof(*mem_pointer);
-  /* moveoffset back the amt of free space*/
+  /*get the size of the spade that is being freed*/
+
+  char free_space = *(char *)mem_pointer;
+
+  /* move offset back the amount of free space*/
   offset -= free_space + sizeof(int);
-  /*how to change the stats of the free*/
+
+  /*update the cur mem_used*/
   cur_mem_used -= free_space + sizeof(int);
   mem_stats_s.num_blocks_used -= 1;
   mem_stats_s.num_blocks_free = 1;
@@ -125,8 +130,6 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr) {
   mem_stats_struct mem_struct = *mem_stats_ptr;
 };
 void print_stats(char *prefix) {
-  /*mem_stats_struct mem_stats;*/
-
   mem_get_stats(&mem_stats_s);
   printf("mem stats: %s: %d free blocks, %d used blocks, free blocks: "
          "smallest=%d largest=%d, used blocks: smallest=%d largest=%d\n",
