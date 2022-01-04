@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 /*global variables*/
-int *front;
-int end;
-int *offset;
 int total_mem_size;
 int cur_mem_used;
 /* keep track of prev smallest block*/
@@ -25,18 +22,14 @@ mem_stats_struct mem_stats_s;
 
 /*initialize the linked list */
 // A linked list node
-struct Node {
+typedef struct Node {
   int data;
   struct Node *next;
-};
-/* pointer to the begining of the linked list*/
-unsigned char *head;
-/*pointer to the next node of the linked list*/
-struct Node *next;
-
-int *used_free_list[0];
-/*int *used_list[0];*/
-struct Node *linked_list;
+  struct Node *prev;
+  unsigned char *mem_add_head;
+} free_list, used_list;
+free_list *head_free = NULL;
+used_list *head_used = NULL;
 
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   /*pointer pointing to the struct*/
@@ -48,54 +41,42 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   mem_stats_s.largest_block_free = my_mem_size;
   mem_stats_s.largest_block_used = 0;
 
-  int num_nodes = my_mem_size / sizeof(struct Node);
-  /* pointer to the begining of the linked list*/
-  unsigned char *head = my_memory;
-  /*initialized link list*/
-  linked_list = (struct Node *)my_memory;
-  // arranging pointers
-  for (int i = 0; i < num_nodes; i++) {
-    linked_list[i].next = &linked_list[i + 1];
-  }
-  linked_list[num_nodes].next = NULL;
+  /* pointer to the begining of the linked list free, the mem adress of it */
+  head_free->mem_add_head = my_memory + sizeof(struct Node);
+  head_free->data = my_mem_size;
+  head_free->next = NULL;
+  /*initialize the used list as empty*/
+  head_used->mem_add_head = NULL;
+  head_used->data = 0;
+  head_used->next = NULL;
 
-  /*pointer to the next node of the linked list*/
-  struct Node *next = NULL;
-  /*free_list initialize size*/
-  used_free_list[0] = used_free_list[my_mem_size];
-  /*used_list  initialize to size*/
-  /*used_list[0] = used_list[my_mem_size];*/
-  /*pointer to the offset of the stack*/
-  int *offset = 0;
-  /*set total memory size*/
+  cur_mem_used = sizeof(struct Node);
   total_mem_size = my_mem_size;
-  /*set current memory size*/
-  cur_mem_used = 0;
 };
 void *my_malloc(unsigned size) {
   /*pass the memory size and move the offset pointer to accomodate your size of
    * memory*/
-  /*point to the begining of the variable*/
-  int *header = offset;
-  /* at the offset have a variable that tells you how big the memory is*/
-  int var_size = size;
+  /*check if there is enough space in free for size*/
+  if (size + cur_mem_used > total_mem_size) {
+    fprintf(stderr, " Error: not enough free memory ");
+    exit(-1);
+  }
+  /*if there is enough space continue:*/
+  while (head_free->next != NULL) {
+    if (head_free->data >= size) {
+      head_used->mem_add_head = head_free->mem_add_head;
+      head_free->mem_add_head =
+          head_free->mem_add_head + size + sizeof(struct Node);
+      head_used->data = size + sizeof(struct Node);
+    }
+  }
   /*increment cur mem by size and size of header*/
-  cur_mem_used += size + sizeof(int);
-  /* set the adress of var size to be the same as header so that header is
-   * pointng to the size */
-  header = &var_size;
-  /*increment the offset*/
-  offset += var_size + sizeof(int);
+  cur_mem_used += size + sizeof(struct Node);
   /*increment number of blocks used*/
   mem_stats_s.num_blocks_used += 1;
   /* if all the space is used set the num of free blocks to 0*/
   if (cur_mem_used == total_mem_size) {
     mem_stats_s.num_blocks_free = 0;
-  }
-  /*if the cur mem used is greater then the size , return an error*/
-  if (cur_mem_used > total_mem_size) {
-    fprintf(stderr, " Error: not enough free memory ");
-    exit(-1);
   }
   /* change the smallest free block to the new size of the free block*/
   mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used - sizeof(int);
@@ -103,27 +84,26 @@ void *my_malloc(unsigned size) {
   if (mem_stats_s.smallest_block_used == 0) {
     mem_stats_s.smallest_block_used = size;
     prevSmallestHeader = size;
-  } else if ((*header < mem_stats_s.smallest_block_used) &&
-             (*header < prevSmallestHeader)) {
+  } else if ((size < mem_stats_s.smallest_block_used) &&
+             (size < prevSmallestHeader)) {
     prevSmallestHeader = mem_stats_s.smallest_block_used;
     mem_stats_s.smallest_block_used = size;
-  } else if ((*header > mem_stats_s.smallest_block_used) &&
-             (*header < prevSmallestHeader)) {
+  } else if ((size > mem_stats_s.smallest_block_used) &&
+             (size < prevSmallestHeader)) {
     prevSmallestHeader = size;
   }
   /* change the largest free block to the new size of the free block*/
   mem_stats_s.largest_block_free = total_mem_size - cur_mem_used - sizeof(int);
   /*check if this block is the largest*/
-  if ((*header > mem_stats_s.largest_block_used) &&
-      (*header > prevBiggestHeader)) {
+  if ((size > mem_stats_s.largest_block_used) && (size > prevBiggestHeader)) {
     prevBiggestHeader = mem_stats_s.largest_block_used;
     mem_stats_s.largest_block_used = size;
-  } else if ((*header < mem_stats_s.largest_block_used) &&
-             (*header > prevBiggestHeader)) {
+  } else if ((size < mem_stats_s.largest_block_used) &&
+             (size > prevBiggestHeader)) {
     prevBiggestHeader = size;
   }
   /*return pointer to the size of that insert*/
-  return header;
+  return head_used->mem_add_head;
 };
 void my_free(void *mem_pointer) {
   /*pass a pointer that is pointing to memory where the memory is , the header
