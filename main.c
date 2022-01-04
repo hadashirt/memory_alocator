@@ -15,7 +15,6 @@ int main(int argc, char **argv) {
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
     ptr_array[i] = my_malloc(sizes[i]);
-
     sprintf(buf, "after iteration %d size %d", i, sizes[i]);
     print_stats(buf);
   }

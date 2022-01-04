@@ -2,6 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(lldb) Attach",
+      "type": "cppdbg",
+      "request": "attach",
+      "program": "enter program name, for example ${workspaceFolder}/a.out",
+      "processId": "${command:pickProcess}",
+      "MIMode": "lldb"
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
@@ -11,7 +19,7 @@
       "stopAtEntry": true,
       "cwd": "/Users/hadashirt/Desktop/Computer Systems C/memory_alocator",
       "environment": [],
-      "program": "/Users/hadashirt/Desktop/Computer Systems C/memory_alocator/build/Debug/outDebug",
+      "program": "/Users/hadashirt/Desktop/Computer Systems C/memory_alocator/main",
       "internalConsoleOptions": "openOnSessionStart",
       "MIMode": "lldb",
       "externalConsole": true

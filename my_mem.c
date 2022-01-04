@@ -23,6 +23,21 @@ typedef struct {
 mem_stats_ptr mem_stats_p;
 mem_stats_struct mem_stats_s;
 
+/*initialize the linked list */
+// A linked list node
+struct Node {
+  int data;
+  struct Node *next;
+};
+/* pointer to the begining of the linked list*/
+unsigned char *head;
+/*pointer to the next node of the linked list*/
+struct Node *next;
+
+int *used_free_list[0];
+/*int *used_list[0];*/
+struct Node *linked_list;
+
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   /*pointer pointing to the struct*/
   mem_stats_p = &mem_stats_s;
@@ -32,10 +47,24 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   mem_stats_s.smallest_block_used = 0;
   mem_stats_s.largest_block_free = my_mem_size;
   mem_stats_s.largest_block_used = 0;
-  /* pointer to the begining of the stack*/
-  int *front = 0;
-  /*size of the stack*/
-  int end = my_mem_size;
+
+  int num_nodes = my_mem_size / sizeof(struct Node);
+  /* pointer to the begining of the linked list*/
+  unsigned char *head = my_memory;
+  /*initialized link list*/
+  linked_list = (struct Node *)my_memory;
+  // arranging pointers
+  for (int i = 0; i < num_nodes; i++) {
+    linked_list[i].next = &linked_list[i + 1];
+  }
+  linked_list[num_nodes].next = NULL;
+
+  /*pointer to the next node of the linked list*/
+  struct Node *next = NULL;
+  /*free_list initialize size*/
+  used_free_list[0] = used_free_list[my_mem_size];
+  /*used_list  initialize to size*/
+  /*used_list[0] = used_list[my_mem_size];*/
   /*pointer to the offset of the stack*/
   int *offset = 0;
   /*set total memory size*/
@@ -65,7 +94,7 @@ void *my_malloc(unsigned size) {
   }
   /*if the cur mem used is greater then the size , return an error*/
   if (cur_mem_used > total_mem_size) {
-    fprintf(stderr, " Error,not enough free memory ");
+    fprintf(stderr, " Error: not enough free memory ");
     exit(-1);
   }
   /* change the smallest free block to the new size of the free block*/
@@ -100,15 +129,17 @@ void my_free(void *mem_pointer) {
   /*pass a pointer that is pointing to memory where the memory is , the header
   should show you how big the data is in the part of the stack, move the offset
   pointer back depending on size of the variable*/
-  /*get the size of the spade that is being freed*/
+  /*get the size of the space that is being freed*/
 
-  char free_space = *(char *)mem_pointer;
+  int free_space = *(int *)mem_pointer;
 
   /* move offset back the amount of free space*/
   offset -= free_space + sizeof(int);
 
   /*update the cur mem_used*/
+
   cur_mem_used -= free_space + sizeof(int);
+
   mem_stats_s.num_blocks_used -= 1;
   mem_stats_s.num_blocks_free = 1;
   /*should I add in an error message here if you cant remove a variable */
@@ -122,8 +153,9 @@ void my_free(void *mem_pointer) {
   if (free_space == mem_stats_s.largest_block_used) {
     mem_stats_s.largest_block_used = prevBiggestHeader;
   }
-  if (free_space == total_mem_size) {
+  if (mem_stats_s.num_blocks_used == 0) {
     mem_stats_s.smallest_block_used = 0;
+    mem_stats_s.largest_block_used = 0;
   }
 };
 void mem_get_stats(mem_stats_ptr mem_stats_ptr) {
