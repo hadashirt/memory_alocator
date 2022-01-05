@@ -2,6 +2,7 @@
 #include <stdlib.h>
 /*global variables*/
 int total_mem_size;
+// keep track of current memory being used
 int cur_mem_used;
 /* keep track of prev smallest block*/
 int prevSmallestHeader = 0;
@@ -28,6 +29,7 @@ struct Node {
   struct Node *next;
   struct Node *prev;
 };
+// used and free list
 struct Node *head_free = NULL;
 struct Node *head_used = NULL;
 
@@ -58,11 +60,10 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
   total_mem_size = my_mem_size;
 };
 void *my_malloc(unsigned size) {
-  /*pass the memory size and move the offset pointer to accomodate your size of
-   * memory*/
   /*check if there is enough space in free for size*/
   if (size + cur_mem_used > total_mem_size) {
     fprintf(stderr, " Error: not enough free memory ");
+    return NULL;
     exit(-1);
   }
   /*if there is enough space continue:*/
@@ -114,17 +115,24 @@ void *my_malloc(unsigned size) {
 };
 
 void my_free(void *mem_pointer) {
-  /*find the node that  is being removed and then remove it */
+  /*find the node that  is being removed and change the pointer of mem adress to
+   * the free list  */
   struct Node *ptr = head_used;
   while (ptr != NULL) {
     if ((head_used->mem_add_head = mem_pointer)) {
-      printf("%d\n", head_used->size);
+
       head_free->mem_add_head = mem_pointer;
       head_used->mem_add_head = mem_pointer -= head_used->size;
+      head_used->next = NULL;
       break;
     }
     head_used = head_used->next;
     ptr = ptr->next;
+    // if the node is not there return NULL
+    if (ptr == NULL) {
+      printf("%s\n", "Value not there");
+      exit(-1);
+    }
   }
   // set the size of the space being freed
   int free_space = head_used->size;
@@ -132,16 +140,23 @@ void my_free(void *mem_pointer) {
 
   /*update the cur mem_used*/
   cur_mem_used -= free_space;
-
+  if (mem_stats_s.num_blocks_used == 0) {
+    printf("%s\n", "Value not there");
+    exit(-1);
+  }
   mem_stats_s.num_blocks_used -= 1;
   mem_stats_s.num_blocks_free += 1;
-  /*should I add in an error message here if you cant remove a variable*/
-  mem_stats_s.smallest_block_free = total_mem_size - cur_mem_used;
-
+  if (free_space < mem_stats_s.smallest_block_free) {
+    mem_stats_s.smallest_block_free =
+        free_space; // total_mem_size - cur_mem_used;
+  }
   if (free_space == mem_stats_s.smallest_block_used) {
     mem_stats_s.smallest_block_used = prevSmallestHeader;
   }
-  mem_stats_s.largest_block_free = total_mem_size - cur_mem_used;
+  if (free_space > mem_stats_s.largest_block_free) {
+    mem_stats_s.largest_block_free =
+        free_space; // total_mem_size - cur_mem_used;
+  }
 
   if (free_space == mem_stats_s.largest_block_used) {
     mem_stats_s.largest_block_used = prevBiggestHeader;
