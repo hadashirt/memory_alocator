@@ -183,6 +183,7 @@ void my_free(void *mem_pointer) {
     printf("%s\n", "Value not there");
     exit(-1);
   }
+  // update stats
   mem_stats_s.num_blocks_used -= 1;
   mem_stats_s.num_blocks_free += 1;
   if (free_space < mem_stats_s.smallest_block_free) {
