@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
   print_stats("init");
 
   unsigned char *ptr_array[10];
-  unsigned int sizes[] = {30, 20, 20, 20, 50, 0};
+  unsigned int sizes[] = {20, 20, 30, 20, 50, 0};
 
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
