@@ -33,24 +33,24 @@ struct Node {
 struct Node *head_free = NULL;
 struct Node *head_used = NULL;
 void push(struct Node **head_ref, unsigned char *mem_add_head, int new_data) {
-  /* 1. allocate node */
+  /* allocate new node */
   struct Node *new_node = (struct Node *)malloc(sizeof(struct Node));
 
-  /* 2. put in the data  */
+  /* put in the size and memory adress  */
   new_node->size = new_data;
   new_node->mem_add_head = mem_add_head;
 
-  /* 3. Make next of new node as head */
+  /*  Make next of new node as head */
   new_node->next = (*head_ref);
 
-  /* 4. move the head to point to the new node */
+  /* move the head to point to the new node */
   (*head_ref) = new_node;
 }
 void deleteNode(struct Node **head_ref, int key, unsigned char *mem_add_head) {
   // Store head node
   struct Node *temp = *head_ref, *prev;
 
-  // If head node itself holds the key to be deleted
+  // If head node itself holds the size key to be deleted
   if (temp != NULL && temp->size == key) {
     *head_ref = temp->next; // Changed head
     free(temp);             // free old head
@@ -114,9 +114,6 @@ void *my_malloc(unsigned size) {
     if (head_free->size >= size) {
       push(&head_used, head_free->mem_add_head, size);
       deleteNode(&head_free, size, head_free->mem_add_head);
-      //  head_used->mem_add_head = head_free->mem_add_head;
-      //  head_free->mem_add_head = head_free->mem_add_head - size;
-      //  head_used->size = size;
       break;
     }
     ptr = ptr->next;
@@ -154,7 +151,6 @@ void *my_malloc(unsigned size) {
     prevBiggestHeader = size;
   }
   /*return pointer to the memory location of the insert*/
-
   return head_used->mem_add_head;
 };
 
@@ -167,10 +163,6 @@ void my_free(void *mem_pointer) {
     if (head_used->mem_add_head == mem_pointer) {
       push(&head_free, head_used->mem_add_head, head_used->size);
       deleteNode(&head_used, head_used->size, head_used->mem_add_head);
-
-      // head_free->mem_add_head = mem_pointer;
-      // head_used->mem_add_head = mem_pointer += ptr->size;
-      // head_used->next = NULL;
       break;
     }
     head_used = head_used->next;
@@ -200,8 +192,7 @@ void my_free(void *mem_pointer) {
     mem_stats_s.smallest_block_used = prevSmallestHeader;
   }
   if (free_space > mem_stats_s.largest_block_free) {
-    mem_stats_s.largest_block_free =
-        free_space; // total_mem_size - cur_mem_used;
+    mem_stats_s.largest_block_free = free_space;
   }
 
   if (free_space == mem_stats_s.largest_block_used) {

@@ -1,7 +1,7 @@
 #include "my_mem.c"
 #include <stdlib.h>
 
-/*remove something that is not there */
+/*check that my_malloc returns the memory add*/
 int main(int argc, char **argv) {
   unsigned int global_mem_size = 50 * 50;
   unsigned char *global_memory = malloc(global_mem_size);
